@@ -1,41 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const passport = require('passport');
-require('../auth/googleauth')(passport);
-const cors = require('cors');
-const session = require('express-session')
+const requireLogin = require('../middleware/verifyuser');
+const User = require('../models/user');
 
 const app = express();
 
-app.use(cors());
 
-// app.use(session({
-//     secret: "abcdef",
-//     resave: false,
-//     saveUninitialized: false
-// }))
-// app.use(passport.initialize());
-// app.use(passport.session());
+router.get('/protected',requireLogin,(req,res)=>{
+    res.send("hello from protected route");
+});
 
+router.get('/userdetails',requireLogin,(req,res)=>{
+    console.log(req.user);
+    const userdata = {
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        pic: req.user.profilePic,
+        friends: req.user.friends.length,
+        website: req.user.myWebsite,
+        designation: req.user.designation,
+        role: req.user.role,
+        city:req.user.city,
+        state:req.user.state,
+        zipCode:req.user.zipCode,
+        DOB:req.user.DOB,
+        fname:req.user.firstName,
+        lname:req.user.lastName
+    }
+    res.json(userdata);
+})
 
-// router.get('/',isLoggedIn,(req,res)=>{
-//     res.send("hello from auth route");
-// });
+router.post('/viewuserdetails',requireLogin,(req,res)=>{
+    User.find({_id:req.body.userid}).then(data=>{
+        res.json({data});  
+    })
+})
 
-// router.get('/google',(req,res,next)=>{
-//     console.log("reached google");
-//     next();
-// }, passport.authenticate('google', { scope: ['profile', 'email',] }));
-
-// router.get('/auth/google/callback',(req,res,next)=>{
-//     console.log('reached');
-//     next();
-// },passport.authenticate('google',{successRedirect: '/',failureRedirect: "www.youtube.com"}));
-
-
-// function isLoggedIn(req,res,next){
-//     console.log(req.isAuthenticated())
-//     req.isAuthenticated() ? next() : res.sendStatus(401)
-// }
+router.post('/viewContactDetails',requireLogin,(req,res)=>{
+    User.find({_id:req.body.contact_id}).then(data=>{
+        res.json({data});  
+    })
+})
 
 module.exports = router;

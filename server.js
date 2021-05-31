@@ -1,70 +1,69 @@
 const express = require('express');
 const mongoose = require('./config/dbConnection');
-const route = require('./routes/auth');
-// const cors = require('cors');
+const authroute = require('./routes/auth');
+const postroute = require('./routes/post');
+const profileroute = require('./routes/profile');
+const suggestionroute = require('./routes/suggestions');
+const requestroute = require('./routes/request');
+const notificationroute = require('./routes/notification');
+const contacts = require('./routes/contact');
+const report = require('./routes/report');
+const moderator = require('./routes/Admin/Moderator');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
 
 const passport = require('passport');
 require('./auth/googleauth')(passport);
-const session = require('express-session')
+const { secret } = require('./config/gauthConfig');
+const { json } = require('express');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = process.env.port || 8000;
 
-
-// app.options('*', cors(
-//     cors.CorsOptions = {
-//         origin: 'http://localhost:3000'
-//       }
-// ));
-
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE');
     next();
-    });
+  });
+
+app.use(cors());
+
 
 app.use(express.json());
-// app.use(cors(
-//     {
-//         origin: 'http://localhost:3000',
-//          optionsSuccessStatus: 200 
-//     }
-// ));
+app.use(cookieParser());
 
+//routes
+app.use(authroute);
+app.use(postroute);
+app.use(profileroute);
+app.use(suggestionroute);
+app.use(requestroute);
+app.use(notificationroute);
+app.use(contacts);
+app.use(report);
+app.use(moderator);
 
-
-app.use(route);
-
-app.use(session({
-    secret: "abcdef",
-    resave: false,
-    saveUninitialized: false
-}))
 app.use(passport.initialize());
 app.use(passport.session());
-
-
-app.get('/',isLoggedIn,(req,res)=>{
-    res.send("hello from auth route");
-});
 
 app.get('/google',(req,res,next)=>{
     console.log("reached google");
     next();
-}, passport.authenticate('google', { scope: ['profile', 'email',] }));
+}, passport.authenticate('google', { session:false, scope: ['profile', 'email',] }));
 
-app.get('/auth/google/callback',(req,res,next)=>{
-    console.log('reached');
-    next();
-},passport.authenticate('google',{successRedirect: '/',failureRedirect: "www.youtube.com"}));
-
-
-function isLoggedIn(req,res,next){
-    console.log(req.isAuthenticated())
-    req.isAuthenticated() ? next() : res.sendStatus(401)
+app.get('/auth/google/callback',passport.authenticate('google',
+{
+    session: false,
 }
-
+),(req,res,next)=>{
+    const token = jwt.sign({_id: req.user._id},secret);
+    res.cookie('token',token);
+    const data=JSON.stringify(req.user.email);
+    res.cookie('email',data);
+    res.redirect('http://localhost:3000/feed');
+    next();
+});
 
 app.listen(port, ()=>{
     console.log(`server is up and running at port ${port}`);

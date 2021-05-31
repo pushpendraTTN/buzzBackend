@@ -2,17 +2,21 @@ const mongoose = require('mongoose');
 const { ObjectId } = mongoose.Schema.Types;
 
 const postSchema = new mongoose.Schema({
-    title:{
-        type: String,
-        required: true
-    },
     body:{
-        type: String,
-        required: true
+        type: String
     },
     photo:{
-        type: String,
-        reuired: true
+        type: String
+    },
+    report:[
+        {
+            type: ObjectId,
+            ref:"User"
+    
+        }
+    ],
+    reportCount:{
+        type:Number
     },
     likes: [
         {
@@ -28,13 +32,20 @@ const postSchema = new mongoose.Schema({
     ],
     comments: [
         {
-            type: String,
-            ref: "User"
+            text: String,
+            postedBy: {
+                type: ObjectId,
+                ref: "User"
+            }
         }
     ],
     postedBy: {
         type: ObjectId,
         ref: "User"
+    },
+    createdAt:{
+        type: Date,
+        default: new Date()
     }
 });
 
